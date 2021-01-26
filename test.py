@@ -174,7 +174,7 @@ def test_net(network, input_image, text_threshold, link_threshold, low_text, cud
     return boxes
 
 
-def auto_crop(image_dir, box_list, result_dir):
+def auto_crop2(image_dir, box_list, result_dir):
     filename, file_ext = os.path.splitext(os.path.basename(image_dir))
     img = cv2.imread(image_dir)
 
@@ -183,12 +183,54 @@ def auto_crop(image_dir, box_list, result_dir):
     img_h = img_shape[0]  # height
     img_center = np.array([img_w / 2, img_h / 2])  # center point
     # print("shape ", img_shape)
+    print(box_list)
+    for i, bbox in enumerate(box_list):
+        print(bbox)
+        dy = sorted([y[1] for y in bbox], key=float)
+        dx = sorted([x[0] for x in bbox], key=float)
+        max_y = dy[-1]
+        max_x = dx[-1]
+        min_y = dy[0] if dy[0] > 0 else 0
+        min_x = dx[0] if dx[0] > 0 else 0
+        _A = [min_x, max_y]
+        _B = [max_x, max_y]
+        _C = [max_x, min_y]
+        _D = [min_x, min_y]
+        print(dx, dy)
+        print(_A, _B, _C, _D)
+        # padding = 0.1
+        h, w = int(max_y - min_y), int(max_x - min_x)
+        # cc = sum(bbox)/len(bbox)
+        x, y = int(min_x), int(min_y)
+
+        # for point in box_cc.values():
+        #     draw(rotated_img, point, 10, [255, 255, 255])
+
+        print(x, y, h, w)
+        crop_img = img[y:y + h, x:x + w]
+        # try:
+        cv2.imwrite(os.path.join(result_dir, filename + "_" + str(i) + ".jpg"), crop_img)
+        # except:
+        #     """saved failed"""
+        print("=========================")
+
+
+def auto_crop(image_dir, box_list, result_dir):
+    filename, file_ext = os.path.splitext(os.path.basename(image_dir))
+    img = cv2.imread(image_dir)
+
+    img_shape = img.shape
+    img_w = img_shape[1]  # width
+    img_h = img_shape[0]  # height
+    img_center = np.array([img_w / 2, img_h / 2])  # center point
+    print("shape ", img_shape)
     for i, bbox in enumerate(box_list):
         box = {
             "a": np.array(bbox[0]),
             "b": np.array(bbox[1]),
             "c": np.array(bbox[2]),
-            "d": np.array(bbox[3])}
+            "d": np.array(bbox[3])
+        }
         _3edges = {
             "ab": np.linalg.norm(box["b"] - box["a"]),
             "ac": np.linalg.norm(box["c"] - box["a"]),
@@ -310,11 +352,11 @@ if __name__ == '__main__':
         # mask_file = result_folder + "/res_" + filename + '_mask.jpg'
         # cv2.imwrite(mask_file, score_text)
         # file_utils.saveResult(image_path, image[:, :, ::-1], polys, dirname=result_folder)
-        try:
-            auto_crop(image_path, boxes, result_folder)
-        except:
-            """error"""
-            continue
+        # try:
+        auto_crop2(image_path, boxes, result_folder)
+        # except:
+        #     print("error")
+        # continue
 
     # rotation angle in degree
     print("elapsed time : {}s".format(time.time() - t))
